@@ -46,6 +46,11 @@ var appointmentSchema = new Schema({
     user_id:String,
     bookingStatus:String
   });
+  var reviewSchema=new Schema({
+      review:String,
+      name:String
+  })
+  var Review=mongoose.model("Review",reviewSchema);
 var Appointment=mongoose.model("Appointment",appointmentSchema);
 var userschema=new Schema({
     username:String,
@@ -74,7 +79,18 @@ passport.deserializeUser(User.deserializeUser());
 
 
 app.get('/',(req,res)=>{
-    res.render('homepage');
+    Review.find({},function(err,data){
+        if(err)
+        {
+            console.log(err);
+            res.render('login');
+        }
+        else
+        {
+            console.log(data);
+            res.render('homepage',{data:data});
+        }
+    });
 });
 app.get('/adminHome',isLoggedIn,function(req,res){
     User.find({},function(err,data){
@@ -86,7 +102,7 @@ app.get('/adminHome',isLoggedIn,function(req,res){
         else
         {
               console.log(data);
-            res.render('adminHome',{data:data});
+            res.render('adminHome',{data:data,message:req.flash('success')});
         }
     })
 });
@@ -139,7 +155,7 @@ app.post('/appointmentUp/:id/:id2',function(req,res){
                         }
                         else
                         {
-                            
+                            req.flash('success','SUCCESSFULLY SAVED THE CHANGES');
                             res.redirect('/adminHome')
                         }
                     });
@@ -176,7 +192,7 @@ app.post('/appointmentUp/:id/:id2',function(req,res){
                         console.log("************");
                         if(foundUser.appointment[i].id.trim()===recievedId.trim() && i!=foundUser.appointment.length - 1)
                         {
-                            console.log("delete done");
+                            
                             foundUser.appointment[i].bookingStatus=valuOfBook;
                         }
                         if(i==foundUser.appointment.length - 1)
@@ -196,7 +212,7 @@ app.post('/appointmentUp/:id/:id2',function(req,res){
                                      }
                                      else
                                      {
-
+                                        req.flash('success','SUCCESSFULLY SAVED THE CHANGES');
                                          console.log("inside save");
                                          res.redirect('/adminHome')
                                      }
@@ -378,35 +394,75 @@ app.delete('/appointment/:id',function(req,res){
 });
 app.get('/login',(req,res)=>{
     
-    res.render('login');
+    res.render('login',{message:req.flash('err')});
+})
+app.get('/loginflash',function(req,res){
+    req.flash('err','Inavlid username or password');
+    res.redirect('/login');
 })
 app.post("/login", passport.authenticate("local",{
     successRedirect: "/userHome",
-    failureRedirect: "/login"
+    failureRedirect: "/loginflash"
 }), function(req, res){
     
 });
 app.get('/register',(req,res)=>{
     
-    res.render('register');
+    res.render('register',{message:req.flash('err')});
 })
 app.post("/register", function(req, res){
     console.log(req.body.username);
     console.log(req.body.password);
     User.register(new User({username: req.body.username}), req.body.password, function(err, user){
         if(err){
+            console.log(typeof(err));
+            req.flash('err', "A user with given username already exists");
             console.log(err);
-            return res.render("register");
+              res.redirect('/register');
         }
         passport.authenticate("local")(req, res, function(){
             console.log(req.user.id);
-            res.redirect("/");
+            res.redirect("/userHome");
         });
     });
+});
+app.get('/preg',function(req,res){
+    res.render('preg');
+});
+app.get('/diab',function(req,res){
+    res.render('diab');
+});
+app.get('/aller',function(req,res){
+    res.render('allergy');
+});
+app.get('/swasth',function(req,res){
+    res.render('swasth')
 });
 app.get("/logout", function(req, res){
     req.logout();
     res.redirect("/");
+});
+app.post('/review',function(req,res){
+    console.log("review route working");
+    console.log(req.body.review);
+    console.log(req.body.name);
+    var reviewInstance=new Review({
+        review:req.body.review,
+        name:req.body.name
+    })
+    reviewInstance.save(function(err,rrr){
+            if(err)
+            {
+                console.log(err);
+                res.redirect('/');
+            }
+            else
+            {
+                console.log(rrr);
+                res.redirect('/');
+            }
+    });
+    
 });
 app.post('/appointment/new',function(req,res){
     // req.flash('message', 'Success!!');
@@ -472,6 +528,26 @@ ctc.save(function(err,ss){
 console.log("hi");
 
 });
+
+app.get('/test',function(req,res){
+    res.render('cbc');
+});
+app.get('/heart',function(req,res){
+    res.render('heart');
+});
+app.get('/thyroid',function(req,res){
+    res.render('thyroid');
+});
+app.get('/vitamin',function(req,res){
+    res.render('vitamin');
+});
+app.get('/cbc',function(req,res){
+    res.render('cbc');
+});
+app.get('/lungs',function(req,res){
+    res.render('lungs');
+});
+ 
 function isLoggedIn(req, res, next){
     if(req.isAuthenticated()){
         return next();
